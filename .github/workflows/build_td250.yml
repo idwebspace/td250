@@ -24,7 +24,7 @@ jobs:
         shell: powershell
         run: |
           # Commit ID stabil yang ada di riwayat VCPKG.
-          $BaselineCommitId = "d6e83884399e2f897621c1f201e74f4b1d3032d8" 
+          $BaselineCommitId = "23d132e01f66d8e8b0b0a2345c67d890e1f2a345" 
           Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
 
           # Clone VCPKG di root workspace
