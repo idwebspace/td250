@@ -5,12 +5,5 @@
     "openssl",
     "zlib",
     "libtgvoip"
-  ],
-  "vcpkg-configuration": {
-    "default-registry": {
-      "kind": "git",
-      "repository": "https://github.com/microsoft/vcpkg",
-      "baseline": "d6e83884399e2f897621c1f201e74f4b1d3032d8"
-    }
-  }
+  ]
 }
