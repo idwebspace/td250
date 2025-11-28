@@ -1,0 +1,71 @@
+name: Build Telegram Desktop EXE (Windows)
+
+on:
+  push:
+    branches:
+      - main  # Ubah ke branch utama Anda jika berbeda (misalnya: master)
+  workflow_dispatch: # Mengizinkan eksekusi manual dari tab Actions di GitHub
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true # Penting jika ada submodul Git
+
+      # --- 1. Setup VCPKG (Manajer Paket C/C++) ---
+      - name: Install VCPKG Dependencies
+        uses: lukka/run-vcpkg@v11
+        with:
+          # VCPKG akan membaca dependensi dari vcpkg.json
+          vcpkgJsonGlob: 'vcpkg.json' 
+          vcpkgTriplet: x64-windows # Menggunakan 64-bit untuk Windows
+          
+      # --- 2. Setup Qt Framework (Komponen UI) ---
+      # Kita akan menggunakan Qt 6.5.3, yang umum digunakan untuk TDesktop.
+      - name: Setup Qt 6.5.3
+        uses: jurgenleschner/setup-qt@v1
+        with:
+          version: '6.5.3' 
+          host: 'windows' 
+          target: 'desktop'
+          arch: 'win64_msvc2019_64' # Kompatibel dengan Visual Studio 2022 runner
+
+      # --- 3. Konfigurasi Proyek (CMake) ---
+      - name: Configure CMake
+        run: |
+          # Dijalankan dalam lingkungan developer Visual Studio
+          # Menentukan generator VS 2022 (Visual Studio 17)
+          # Menghubungkan Toolchain VCPKG agar CMake dapat menemukan OpenSSL/zlib, dll.
+          # Menghubungkan Qt dengan CMAKE_PREFIX_PATH
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64"
+
+      # --- 4. Build Proyek ---
+      - name: Build Project (Release Configuration)
+        # --config Release untuk build yang siap pakai
+        run: cmake --build build --config Release
+
+      # --- 5. Packaging dan Install ---
+      # Langkah ini penting untuk mendapatkan struktur file yang benar
+      - name: Install (Copy build files to install directory)
+        run: cmake --build build --target INSTALL --config Release
+
+      # --- 6. Upload Hasil Build (Artifact) ---
+      - name: Upload Telegram.exe Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: td250-build-windows-${{ github.sha }}
+          # Path ini adalah path default INSTALL yang dibuat oleh Telegram Desktop.
+          path: build/install/Telegram/Telegram.exe 
+          
+      - name: Upload Logs (Optional, untuk Debugging)
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.sha }}
+          path: build/CMakeFiles/
