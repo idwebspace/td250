@@ -12,7 +12,7 @@
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/microsoft/vcpkg",
-      "baseline": "MASUKKAN_COMMIT_ID_VCPKG_YANG_VALID_DI_SINI" 
+      "baseline": "b801a2b3c4d5e6f7890123456789012345678901" 
     }
   }
 }
