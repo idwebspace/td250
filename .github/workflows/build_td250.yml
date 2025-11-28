@@ -1,10 +1,10 @@
-name: Build Telegram Desktop TD250 (Windows - Stable)
+name: Build Telegram Desktop TD250 (Windows - Stabil)
 
 on:
   push:
     branches:
-      - main  # Ganti dengan nama branch Anda
-  workflow_dispatch: # Memungkinkan Anda menjalankannya secara manual
+      - main  # Ganti dengan nama branch utama Anda jika berbeda
+  workflow_dispatch: # Memungkinkan Anda menjalankan secara manual dari tab Actions
 
 jobs:
   build_windows:
@@ -17,12 +17,13 @@ jobs:
           submodules: true
 
       # =========================================================
-      # 1. SETUP VCPKG SECARA MANUAL (Mengatasi Error Code 128/Baseline)
+      # 1. SETUP VCPKG SECARA MANUAL (Mengatasi Error 128/Baseline)
       # =========================================================
+      # Kita akan menggunakan Commit ID stabil yang teruji.
       - name: Setup VCPKG Manually (Clone & Checkout Baseline)
         shell: powershell
         run: |
-          # Commit ID yang teruji. Ganti dengan ID terbaru jika perlu.
+          # Commit ID stabil yang ada di riwayat VCPKG.
           $BaselineCommitId = "d6e83884399e2f897621c1f201e74f4b1d3032d8" 
           Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
 
@@ -41,9 +42,10 @@ jobs:
       - name: Install VCPKG Dependencies Manually
         shell: powershell
         run: |
-          # Menjalankan install menggunakan file vcpkg.json di root
+          # VCPKG sekarang akan menggunakan versi ports yang sudah di-checkout
           Write-Host "Menginstal dependensi VCPKG..."
-          .\vcpkg\vcpkg.exe install --triplet x64-windows
+          # Perintah install vcpkg yang membaca dependencies dari vcpkg.json
+          .\vcpkg\vcpkg.exe install --triplet x64-windows --host-triplet x64-windows
 
       # =========================================================
       # 2. SETUP QT SECARA MANUAL (Mengatasi Error Action Not Found)
@@ -65,8 +67,8 @@ jobs:
       # =========================================================
       - name: Configure CMake
         run: |
-          # CMAKE_TOOLCHAIN_FILE menunjuk ke VCPKG
-          # CMAKE_PREFIX_PATH menunjuk ke instalasi Qt (dari aqtinstall)
+          # Menunjuk ke VCPKG toolchain yang sudah di-setup manual
+          # Menunjuk ke path instalasi Qt (dari aqtinstall)
           cmake -B build -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
             -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" 
