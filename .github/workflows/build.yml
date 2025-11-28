@@ -1,0 +1,63 @@
+name: Build Telegram Desktop EXE
+
+on:
+  push:
+    branches:
+      - main  # Ganti dengan nama branch utama Anda (misalnya: master)
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # --- Setup Prasyarat ---
+      # 1. Setting up VCPKG (Sangat Penting untuk dependensi)
+      - name: Install VCPKG
+        uses: lukka/run-vcpkg@v11
+        with:
+          # VCPKG Manifest akan mengurus dependensi seperti OpenSSL, zlib, dll.
+          vcpkgJsonGlob: 'vcpkg.json' # Pastikan file ini ada di repositori Anda
+          vcpkgTriplet: x64-windows
+
+      # 2. Setting up Qt (Komponen UI Utama)
+      # Anda mungkin perlu menggunakan action khusus untuk Qt, seperti:
+      - name: Setup Qt 6.5
+        uses: jurgenleschner/setup-qt@v1
+        with:
+          version: '6.5.3' 
+          host: 'windows' 
+          target: 'desktop'
+          arch: 'win64_msvc2019_64' # Sesuaikan arsitektur
+
+      # --- Tahap Konfigurasi (CMake) ---
+      - name: Configure CMake
+        run: |
+          # Perintah CMake untuk mengkonfigurasi project
+          # Penting: Setel path VCPKG dan Qt
+          cmake -B build -G "Visual Studio 17 2022" -A x64 ^
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+            -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" # Sesuaikan path Qt
+
+      # --- Tahap Build ---
+      - name: Build Project
+        run: cmake --build build --config Release
+
+      # --- Tahap Packaging (Membuat Installer/ZIP) ---
+      # Telegram Desktop memiliki target 'install' khusus.
+      - name: Create Installer (Optional: CPack)
+        run: cmake --build build --target INSTALL --config Release
+
+      # --- Tahap Artifact (Hasil Akhir) ---
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: td250-build-windows
+          path: build/Release/Telegram.exe # Sesuaikan path .exe yang benar
