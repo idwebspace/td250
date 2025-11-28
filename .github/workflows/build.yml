@@ -24,27 +24,29 @@ jobs:
           vcpkgTriplet: x64-windows
 
       # =========================================================
-      # --- 2. GANTI DENGAN ACTION QT RESMI DAN STABIL ---
+      # --- 2. GANTI DENGAN INSTALLER QT VIA PYTHON/aqtinstall ---
       # =========================================================
-      - name: Setup Qt 6.5.3 (Official Action)
-        uses: qt-project/setup-qt@v1 
+      - name: Install Python 3
+        uses: actions/setup-python@v5
         with:
-          version: '6.5.3'
-          target: 'desktop'
-          host: 'windows'
-          arch: 'win64_msvc2019_64' # Target arsitektur
-          tools: 'qtbase' # Hanya instal modul dasar jika ini cukup
+          python-version: '3.x'
+
+      - name: Install aqtinstall tool
+        run: pip install aqtinstall
+
+      - name: Run aqtinstall for Qt 6.5.3
+        # Menginstal Qt 6.5.3 untuk arsitektur desktop MSVC 2019 64-bit ke path C:\Qt\6.5.3
+        # Qt Tooling untuk VS 2022 kompatibel dengan MSVC 2019/2022.
+        run: aqt install 6.5.3 windows desktop win64_msvc2019_64 -m qtbase --outputdir C:\Qt
 
       # --- 3. Konfigurasi Proyek (CMake) ---
-      # Catatan: Action resmi ini seharusnya mengatur path Qt secara otomatis.
-      # Namun, kita tetap menyertakan -DCMAKE_PREFIX_PATH sebagai cadangan.
+      # Sekarang kita tahu lokasi instalasi Qt-nya
       - name: Configure CMake
         run: |
-          # Dijalankan dalam lingkungan developer Visual Studio
+          # Gunakan environment shell Visual Studio untuk memastikan semua path MSVC terkonfigurasi
           cmake -B build -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
-            # Path ini mungkin TIDAK dibutuhkan jika Action qt-project/setup-qt bekerja dengan baik
-            # -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" 
+            -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" 
 
       # --- 4. Build Proyek ---
       - name: Build Project (Release Configuration)
