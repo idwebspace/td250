@@ -2,16 +2,17 @@
   "name": "td250",
   "version-string": "1.0.0",
   "dependencies": [
+    // Ini adalah dependensi dasar yang dibutuhkan Telegram Desktop
     "openssl",
-    "zlib"
-    // Tambahkan dependensi lain yang dibutuhkan oleh td250 di sini
+    "zlib",
+    "libtgvoip" 
+    // Anda mungkin perlu menambahkan dependensi lain dari td250 jika ada
   ],
   "vcpkg-configuration": {
     "default-registry": {
       "kind": "git",
       "repository": "https://github.com/microsoft/vcpkg",
-      // PASTE COMMIT ID VALID DI SINI
-      "baseline": "b801a2b3c4d5e6f7890123456789012345678901" 
+      "baseline": "MASUKKAN_COMMIT_ID_VCPKG_YANG_VALID_DI_SINI" 
     }
   }
 }
