@@ -1,0 +1,87 @@
+name: Build Telegram Desktop TD250 (Windows - Stable)
+
+on:
+  push:
+    branches:
+      - main  # Ganti dengan nama branch Anda
+  workflow_dispatch: # Memungkinkan Anda menjalankannya secara manual
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      # =========================================================
+      # 1. SETUP VCPKG SECARA MANUAL (Mengatasi Error Code 128/Baseline)
+      # =========================================================
+      - name: Setup VCPKG Manually (Clone & Checkout Baseline)
+        shell: powershell
+        run: |
+          # Commit ID yang teruji. Ganti dengan ID terbaru jika perlu.
+          $BaselineCommitId = "1ee2e9d2920ba96be0b02c09915dd3c6d17fb50e" 
+          Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
+
+          # Clone VCPKG di root workspace
+          git clone https://github.com/microsoft/vcpkg.git
+          
+          # Checkout ke commit ID baseline
+          Set-Location vcpkg
+          git checkout $BaselineCommitId
+          
+          # Jalankan bootstrap (untuk menyiapkan VCPKG)
+          .\bootstrap-vcpkg.bat
+          
+          Set-Location ${{ github.workspace }}
+
+      - name: Install VCPKG Dependencies Manually
+        shell: powershell
+        run: |
+          # Menjalankan install menggunakan file vcpkg.json di root
+          Write-Host "Menginstal dependensi VCPKG..."
+          .\vcpkg\vcpkg.exe install --triplet x64-windows
+
+      # =========================================================
+      # 2. SETUP QT SECARA MANUAL (Mengatasi Error Action Not Found)
+      # =========================================================
+      - name: Install Python 3 for aqtinstall
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install aqtinstall tool
+        run: pip install aqtinstall
+
+      - name: Run aqtinstall for Qt 6.5.3
+        # Menginstal Qt 6.5.3 untuk arsitektur desktop MSVC 2019 64-bit ke path C:\Qt
+        run: aqt install 6.5.3 windows desktop win64_msvc2019_64 -m qtbase --outputdir C:\Qt
+
+      # =========================================================
+      # 3. BUILD PROYEK
+      # =========================================================
+      - name: Configure CMake
+        run: |
+          # CMAKE_TOOLCHAIN_FILE menunjuk ke VCPKG
+          # CMAKE_PREFIX_PATH menunjuk ke instalasi Qt (dari aqtinstall)
+          cmake -B build -G "Visual Studio 17 2022" -A x64 `
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" 
+
+      - name: Build Project (Release Configuration)
+        run: cmake --build build --config Release
+
+      - name: Install (Copy build files to install directory)
+        run: cmake --build build --target INSTALL --config Release
+
+      # =========================================================
+      # 4. UPLOAD HASIL
+      # =========================================================
+      - name: Upload Telegram.exe Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: td250-build-windows-${{ github.sha }}
+          path: build/install/Telegram/Telegram.exe
