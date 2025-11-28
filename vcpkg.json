@@ -1,0 +1,17 @@
+{
+  "name": "td250",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "openssl",
+    "zlib"
+    // Tambahkan dependensi lain yang dibutuhkan oleh td250 di sini
+  ],
+  "vcpkg-configuration": {
+    "default-registry": {
+      "kind": "git",
+      "repository": "https://github.com/microsoft/vcpkg",
+      // PASTE COMMIT ID VALID DI SINI
+      "baseline": "b801a2b3c4d5e6f7890123456789012345678901" 
+    }
+  }
+}
