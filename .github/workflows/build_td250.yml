@@ -22,8 +22,14 @@ jobs:
       - name: Setup VCPKG Manually (Clone & Checkout Baseline)
         shell: powershell
         run: |
-          $BaselineCommitId = "c5f3e7a0a38a79899f8d97632943152d24269d0d" 
+          $BaselineCommitId = "HEAD" 
           Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
+
+          git clone https://github.com/microsoft/vcpkg.git
+          Set-Location vcpkg
+          git checkout $BaselineCommitId
+          .\bootstrap-vcpkg.bat
+          Set-Location ${{ github.workspace }}
 
           git clone https://github.com/microsoft/vcpkg.git
           Set-Location vcpkg
