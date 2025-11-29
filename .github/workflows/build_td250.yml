@@ -60,7 +60,7 @@ jobs:
 
       - name: Run aqtinstall for Qt 6.5.3
         # Menginstal Qt 6.5.3 untuk arsitektur desktop MSVC 2019 64-bit ke path C:\Qt
-        run: aqt install 6.5.3 windows desktop win64_msvc2019_64 -m qtbase --outputdir C:\Qt
+        run: aqt install-qt 6.5.3 windows desktop win64_msvc2019_64 -m qtbase --outputdir C:\Qt
 
       # =========================================================
       # 3. BUILD PROYEK
