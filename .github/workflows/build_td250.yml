@@ -3,7 +3,7 @@ name: Build Telegram Desktop TD250 (Windows - Stabil)
 on:
   push:
     branches:
-      - main  # Ganti dengan nama branch utama Anda
+      - main  # Ganti dengan nama branch utama Andaa
   workflow_dispatch: # Memungkinkan Anda menjalankan secara manual
 
 jobs:
