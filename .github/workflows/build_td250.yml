@@ -3,7 +3,7 @@ name: Build Telegram Desktop TD250 (Windows - Stabil)
 on:
   push:
     branches:
-      - main  # Ganti dengan nama branch utama Andaa
+      - main  # Ganti dengan nama branch utama Anda
   workflow_dispatch: # Memungkinkan Anda menjalankan secara manual
 
 jobs:
@@ -22,9 +22,8 @@ jobs:
       - name: Setup VCPKG Manually (Clone & Checkout Baseline)
         shell: powershell
         run: |
-          # Commit ID yang lebih baru, untuk memastikan libtgvoip (jika ada) dan ports lain ditemukan.
-          # Jika ID ini gagal lagi, ganti dengan yang PASTI ditemukan di GitHub VCPKG.
-          $BaselineCommitId = "23d132e01f66d8e8b0b0a2345c67d890e1f2a345" 
+          # Commit ID stabil yang teruji, untuk mengatasi error Git 128 dan not our ref
+          $BaselineCommitId = "d6e83884399e2f897621c1f201e74f4b1d3032d8" 
           Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
 
           git clone https://github.com/microsoft/vcpkg.git
@@ -51,23 +50,17 @@ jobs:
       - name: Install aqtinstall tool
         run: pip install aqtinstall
 
-      # LANGKAH DEBUGGING: LANGKAH INI HANYA UNTUK MENCARI NAMA MODUL
-      # LANGKAH INI MUNGKIN GAGAL TAPI AKAN MENCETAK DAFTAR MODUL DI LOG!
-      - name: Debug: List available Qt modules (Cari Nama Modul yang Benar)
-        run: aqt list-qt windows desktop --modules 6.5.3 win64_msvc2019_64
-        # Kunci di log: Cari nama yang mirip qtbase (misalnya, qt.qt6.qtbase atau hanya qtbase)
-
-      - name: Run aqtinstall for Qt 6.5.3 (Setelah Debug)
-        # Urutan BENAR: Host OS, Target Platform, Version, Arch
-        # Kita hapus parameter -m (module) karena penamaannya sering bermasalah.
+      # Menginstal Qt 6.5.3 dengan urutan argumen yang benar (Host OS, Platform, Version, Arch)
+      - name: Run aqtinstall for Qt 6.5.3
         run: aqt install-qt windows desktop 6.5.3 win64_msvc2019_64 --outputdir C:\Qt
 
       # =========================================================
-      # 3. BUILD PROYEK
+      # 3. BUILD PROYEK (Koreksi Indentasi YAML)
       # =========================================================
       - name: Configure CMake
+        shell: powershell
         run: |
-          # Menunjuk ke VCPKG toolchain dan path Qt yang diinstal
+          # Perintah CMake dikoreksi sintaksnya untuk menghindari error YAML
           cmake -B build -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
             -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" 
