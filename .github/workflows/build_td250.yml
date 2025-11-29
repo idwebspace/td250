@@ -14,14 +14,18 @@ jobs:
       # =========================================================
       # 0. SETUP CODE & SUBMODULES (Fix Ada Error & fetch-depth)
       # =========================================================
-      - name: Checkout Code
+- name: Checkout Code
         uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0 # Sangat penting untuk repositori besar dan submodul
+          fetch-depth: 0 
 
+      - name: Git Submodule Cleanup & Reset
+        run: |
+          git submodule deinit -f --all
+          git submodule update --init --force --recursive
+      
       - name: Initialize Git Submodules for Dependencies
-        # Ini akan mengisi folder seperti cmake/external/ada/
         run: git submodule update --init --recursive
 
       # =========================================================
