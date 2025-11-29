@@ -16,7 +16,6 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # Mengambil seluruh riwayat untuk memastikan submodul ditemukan
-	# Letakkan langkah ini setelah 'Checkout Code'
       - name: Initialize Git Submodules for Dependencies
         run: git submodule update --init --recursive
 
