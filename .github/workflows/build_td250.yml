@@ -16,9 +16,8 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0  # Mengambil seluruh riwayat untuk memastikan submodul ditemukan
-      - name: Initialize Git Submodules for Dependencies (like ada)
-        run: |
-          git submodule update --init --recursive
+      - name: Initialize Git Submodules for Dependencies
+        run: git submodule update --init --recursive
 
       # =========================================================
       # 1. SETUP VCPKG SECARA MANUAL
