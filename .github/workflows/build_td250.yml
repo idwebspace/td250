@@ -60,7 +60,7 @@ jobs:
 
       - name: Run aqtinstall for Qt 6.5.3
         # Host OS, Target Platform, Version, Arch
-        run: aqt install-qt windows desktop 6.5.3 win64_msvc2019_64 -m qtbase --outputdir C:\Qt
+        run: aqt install-qt windows desktop 6.5.3 win64_msvc2019_64 --outputdir C:\Qt
 
       # =========================================================
       # 3. BUILD PROYEK
