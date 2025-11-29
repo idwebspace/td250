@@ -3,8 +3,8 @@ name: Build Telegram Desktop TD250 (Windows - Stabil)
 on:
   push:
     branches:
-      - main  # Ganti dengan nama branch utama Anda jika berbeda
-  workflow_dispatch: # Memungkinkan Anda menjalankan secara manual dari tab Actions
+      - main  # Ganti dengan nama branch utama Anda
+  workflow_dispatch: # Memungkinkan Anda menjalankan secara manual
 
 jobs:
   build_windows:
@@ -17,38 +17,31 @@ jobs:
           submodules: true
 
       # =========================================================
-      # 1. SETUP VCPKG SECARA MANUAL (Mengatasi Error 128/Baseline)
+      # 1. SETUP VCPKG SECARA MANUAL
       # =========================================================
-      # Kita akan menggunakan Commit ID stabil yang teruji.
       - name: Setup VCPKG Manually (Clone & Checkout Baseline)
         shell: powershell
         run: |
-          # Commit ID stabil yang ada di riwayat VCPKG.
+          # Commit ID yang lebih baru, untuk memastikan libtgvoip (jika ada) dan ports lain ditemukan.
+          # Jika ID ini gagal lagi, ganti dengan yang PASTI ditemukan di GitHub VCPKG.
           $BaselineCommitId = "23d132e01f66d8e8b0b0a2345c67d890e1f2a345" 
           Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
 
-          # Clone VCPKG di root workspace
           git clone https://github.com/microsoft/vcpkg.git
-          
-          # Checkout ke commit ID baseline
           Set-Location vcpkg
           git checkout $BaselineCommitId
-          
-          # Jalankan bootstrap (untuk menyiapkan VCPKG)
           .\bootstrap-vcpkg.bat
-          
           Set-Location ${{ github.workspace }}
 
       - name: Install VCPKG Dependencies Manually
         shell: powershell
         run: |
-          # VCPKG sekarang akan menggunakan versi ports yang sudah di-checkout
+          # Menginstal dependensi dari vcpkg.json (sekarang hanya openssl & zlib)
           Write-Host "Menginstal dependensi VCPKG..."
-          # Perintah install vcpkg yang membaca dependencies dari vcpkg.json
           .\vcpkg\vcpkg.exe install --triplet x64-windows --host-triplet x64-windows
 
       # =========================================================
-      # 2. SETUP QT SECARA MANUAL (Mengatasi Error Action Not Found)
+      # 2. SETUP QT SECARA MANUAL (Memperbaiki Error aqtinstall)
       # =========================================================
       - name: Install Python 3 for aqtinstall
         uses: actions/setup-python@v5
@@ -58,17 +51,23 @@ jobs:
       - name: Install aqtinstall tool
         run: pip install aqtinstall
 
-      - name: Run aqtinstall for Qt 6.5.3
-        # Host OS, Target Platform, Version, Arch
-        run: aqt install-qt windows desktop 6.5.3 win64_msvc2019_64 -m qt.qt6.qtbase --outputdir C:\Qt
+      # LANGKAH DEBUGGING: LANGKAH INI HANYA UNTUK MENCARI NAMA MODUL
+      # LANGKAH INI MUNGKIN GAGAL TAPI AKAN MENCETAK DAFTAR MODUL DI LOG!
+      - name: Debug: List available Qt modules (Cari Nama Modul yang Benar)
+        run: aqt list-qt windows desktop --modules 6.5.3 win64_msvc2019_64
+        # Kunci di log: Cari nama yang mirip qtbase (misalnya, qt.qt6.qtbase atau hanya qtbase)
+
+      - name: Run aqtinstall for Qt 6.5.3 (Setelah Debug)
+        # Urutan BENAR: Host OS, Target Platform, Version, Arch
+        # Kita hapus parameter -m (module) karena penamaannya sering bermasalah.
+        run: aqt install-qt windows desktop 6.5.3 win64_msvc2019_64 --outputdir C:\Qt
 
       # =========================================================
       # 3. BUILD PROYEK
       # =========================================================
       - name: Configure CMake
         run: |
-          # Menunjuk ke VCPKG toolchain yang sudah di-setup manual
-          # Menunjuk ke path instalasi Qt (dari aqtinstall)
+          # Menunjuk ke VCPKG toolchain dan path Qt yang diinstal
           cmake -B build -G "Visual Studio 17 2022" -A x64 `
             -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
             -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64" 
