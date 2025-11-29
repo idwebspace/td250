@@ -1,4 +1,4 @@
-name: Build Telegram Desktop TD250 (Windows - Final)
+name: Build Telegram Desktop TD250 (Windows - Final Stabil)
 
 on:
   push:
@@ -11,28 +11,37 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - name: Checkout Code
+      # =========================================================
+      # 0. SETUP CODE & SUBMODULES (Fix Ada Error)
+      # =========================================================
+      - name: Checkout Code (Deep Fetch)
         uses: actions/checkout@v4
         with:
           submodules: true
-          fetch-depth: 0  # Mengambil seluruh riwayat untuk memastikan submodul ditemukan
+          fetch-depth: 0 # Sangat penting untuk repositori besar dan submodul
+
       - name: Initialize Git Submodules for Dependencies
         run: git submodule update --init --recursive
-
+        
       # =========================================================
-      # 1. SETUP VCPKG SECARA MANUAL
+      # 1. STABILISASI LINGKUNGAN (Mengatasi Masalah Toolchain)
+      # =========================================================
+      - name: Set up Conda Environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: 3.10 # Gunakan versi yang stabil
+          activate-environment: td-build
+          
+      # =========================================================
+      # 2. SETUP VCPKG SECARA MANUAL
       # =========================================================
       - name: Setup VCPKG Manually (Clone & Checkout Baseline)
         shell: powershell
         run: |
-          $BaselineCommitId = "HEAD" 
+          # Commit ID yang stabil
+          $BaselineCommitId = "d6e83884399e2f897621c1f201e74f4b1d3032d8" 
           Write-Host "Mengkloning VCPKG dan Checkout Baseline $BaselineCommitId"
-
-          git clone https://github.com/microsoft/vcpkg.git
-          Set-Location vcpkg
-          git checkout $BaselineCommitId
-          .\bootstrap-vcpkg.bat
-          Set-Location ${{ github.workspace }}
 
           git clone https://github.com/microsoft/vcpkg.git
           Set-Location vcpkg
@@ -47,7 +56,7 @@ jobs:
           .\vcpkg\vcpkg.exe install --triplet x64-windows --host-triplet x64-windows
 
       # =========================================================
-      # 2. SETUP QT SECARA MANUAL
+      # 3. SETUP QT SECARA MANUAL
       # =========================================================
       - name: Install Python 3 for aqtinstall
         uses: actions/setup-python@v5
@@ -58,14 +67,12 @@ jobs:
         run: pip install aqtinstall
 
       - name: Run aqtinstall for Qt 6.5.3
-        # Menginstal Qt dengan urutan argumen yang benar (Host OS, Platform, Version, Arch)
         run: aqt install-qt windows desktop 6.5.3 win64_msvc2019_64 --outputdir C:\Qt
 
       # =========================================================
-      # 3. BUILD PROYEK (YAML FIX)
+      # 4. BUILD PROYEK (YAML FIX)
       # =========================================================
       - name: Configure CMake
-        # Menghilangkan 'shell: powershell' dan '|' untuk menghindari error syntax multiline
         run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_PREFIX_PATH="C:/Qt/6.5.3/msvc2019_64"
 
       - name: Build Project (Release Configuration)
@@ -75,7 +82,7 @@ jobs:
         run: cmake --build build --target INSTALL --config Release
 
       # =========================================================
-      # 4. UPLOAD HASIL
+      # 5. UPLOAD HASIL
       # =========================================================
       - name: Upload Telegram.exe Artifact
         uses: actions/upload-artifact@v4
